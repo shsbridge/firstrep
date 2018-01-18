@@ -1,0 +1,56 @@
+Vagrant.configure("2") do |config|
+  config.vm.define :database do |database|
+    database.vm.box = "google/gce"
+    database.vm.hostname = "database.m310.mongodb.university"
+    database.vm.provision :shell, path: "provision-database", args: ENV['ARGS']
+    database.vm.synced_folder "shared/", "/home/shsbridge/shared", create: true
+
+    database.vm.provider :google do |google, override|
+      google.google_project_id = "serious-citron-160813"
+      google.google_client_email = "160441620784-compute@developer.gserviceaccount.com"
+      google.google_json_key_location = "/home/shsbridge/myjasonkey.jason"
+      google.zone = "us-central1-c"
+
+    google.zone_config "us-central1-c" do |zone1c|
+        zone1c.name = "database-vagrant"
+        zone1c.image = "ubuntu-1404-trusty-v20180110"
+        zone1c.machine_type = "n1-standard-2"
+        zone1c.zone = "us-central1-c"
+        zone1c.metadata = {'custom' => 'metadata', 'db' => 'foobarbaz'}
+        zone1c.scopes = ['bigquery', 'monitoring', 'https://www.googleapis.com/auth/compute']
+        zone1c.tags = ['web', 'db']
+    end
+
+      override.ssh.username = "shsbridge"
+      override.ssh.private_key_path = "~/.ssh/id_rsa"
+      #override.ssh.private_key_path = "~/.ssh/google_compute_engine"
+     end
+   end
+     config.vm.define :infrastructure do |infrastructure|
+    infrastructure.vm.box = "google/gce"
+    infrastructure.vm.hostname = "infrastructure.m310.mongodb.university"
+    infrastructure.vm.provision :shell, path: "provision-infrastructure", args: ENV['ARGS']
+    infrastructure.vm.synced_folder "shared/", "/home/shsbridge/shared", create: true
+
+    infrastructure.vm.provider :google do |google, override|
+      google.google_project_id = "serious-citron-160813"
+      google.google_client_email = "160441620784-compute@developer.gserviceaccount.com"
+      google.google_json_key_location = "/home/shsbridge/myjasonkey.jason"
+      google.zone = "us-central1-c"
+
+    google.zone_config "us-central1-c" do |zone2c|
+        zone2c.name = "infras-vagrant"
+        zone2c.image = "centos-7-v20180104"
+        zone2c.machine_type = "n1-standard-2"
+        zone2c.zone = "us-central1-c"
+        zone2c.metadata = {'custom' => 'metadata', 'infa' => 'foobarbaz'}
+        zone2c.scopes = ['bigquery', 'monitoring', 'https://www.googleapis.com/auth/compute']
+        zone2c.tags = ['web', 'app1']
+    end
+
+      override.ssh.username = "shsbridge"
+      override.ssh.private_key_path = "~/.ssh/id_rsa"
+      #override.ssh.private_key_path = "~/.ssh/google_compute_engine"
+     end
+   end
+end
