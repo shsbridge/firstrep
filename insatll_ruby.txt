@@ -1,0 +1,28 @@
+910971516
+
+
+https://github.com/brandon-rich-aws-deployment-course/art_gallery
+
+yum install ruby
+yum install gcc-c++
+yum install ruby-devel
+yum install zlib-devel
+yum install sqlite-devel
+
+gem install bundle
+Gemfile
+bundle
+
+bundle exec rake db:migrate
+
+rails server
+
+wget http://localhost:3000
+
+ instance-1
+
+Cloudformation Template Anatomy
+https://goo.gl/9OwVBm
+
+AWS::EC2::Instance
+https://goo.gl/4KLUBK

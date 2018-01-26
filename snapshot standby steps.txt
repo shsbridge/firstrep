@@ -1,0 +1,118 @@
+Step 1: Check if Flashback is enabled or not.
+
+i) SQL> select DB_UNIQUE_NAME, OPEN_MODE, DATABASE_ROLE from v$database;
+NAME OPEN_MODE DATABASE_ROLE
+---------------------------------------- ---------- ----------------
+PHYSTD2 MOUNTED PHYSICAL STANDBY
+
+i) SQL> Show parameter db_recovery_file_dest
+NAME TYPE VALUE
+--------------------------------------------------------------- ----------- ------------------------------
+db_recovery_file_dest string /u01/oradata/phystd2/FRA/
+db_recovery_file_dest_size big integer 5G
+
+iii) SQL> select flashback_on from v$database;
+FLASHBACK
+---------
+YES
+
+Step 2: Stop Redo Apply, if it is active.
+SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+
+Step 3: If the standby database is a RAC setup then we need to shutdown all the instances except one on 
+which we will be using the conversion commands.
+
+Step 4: Ensure that the database is mounted.
+
+Step 5: Perform the conversion from physical standby to snapshot standby database:
+SQL> ALTER DATABASE CONVERT TO SNAPSHOT STANDBY;
+
+Step 6: The database is dismounted during this conversion and we have to restart the database, 
+which will be the snapshot standby database.
+SQL> startup
+
+Step 7: Check for database role
+SQL> Select DB_UNIQUE_NAME, OPEN_MODE, DATABASE_ROLE from v$database;
+NAME OPEN_MODE DATABASE_ROLE
+-------------------------------------- ---------- -------------------------------
+PHYSTD2 READ WRITE SNAPSHOT STANDBY
+
+
+
+convert back:
+Step 1: Check for current database role
+SQL> Select DB_UNIQUE_NAME, OPEN_MODE, DATABASE_ROLE from v$database;
+NAME      OPEN_MODE DATABASE_ROLE
+----------------------------------------- ---------- ----------------
+PHYSTD2 READ WRITE SNAPSHOT STANDBY
+
+SQL> select name, guarantee_flashback_database from v$restore_point;
+NAME                                                                       GUA
+----------------------------------------------------------------- -------
+SNAPSHOT_STANDBY_REQUIRED_08/18/2012 17:13:31   YES
+
+Step 2: If the standby database is a RAC setup then we need to shutdown all the instances except one on which we will be using the conversion commands.
+
+Step 3: Ensure that the database is mounted.
+
+Step 4: Do the conversion of snapshot standby database to physical standby database.
+
+I). Manual method.
+Issue the following SQL statement to convert the snapshot standby back to the physical standby:
+SQL> ALTER DATABASE CONVERT TO PHYSICAL STANDBY; 
+
+Step 5: Start database in mount, if not already mounted.
+SQL> alter database mount standby database;
+
+Step 6: Recover Physical Standby database
+SQL> recover managed standby database disconnect from session;
+
+Step 7: Check for database role
+SQL> select DB_UNIQUE_NAME, OPEN_MODE, DATABASE_ROLE from v$database;
+NAME OPEN_MODE DATABASE_ROLE
+--------------------------------- ---------- ----------------
+PHYSTD2 MOUNTED PHYSICAL STANDBY
+
+
+
+In Primary:
+SQL> select status,instance_name,database_role,open_mode from v$database,v$Instance;
+SQL> select thread#,max(sequence#) from v$archived_log group by thread#;
+
+In Standby:
+SQL> select status,instance_name,database_role,open_mode from v$database,v$Instance;
+ 
+SQL> select thread#,max(sequence#) from v$archived_log where applied='YES' group by thread#;
+
+SQL> select flashback_on from v$database;
+    
+SQL> show parameter db_recovery_file_dest;
+
+SQL> alter database recover managed standby database cancel;
+
+SQL> shut immediate
+ 
+SQL> startup mount
+
+SQL> alter database convert to snapshot standby;
+
+SQL> alter database open;
+ 
+SQL> select status,instance_name,database_role,open_mode from v$database,v$Instance
+
+
+ROLLBACk
+In Primary:
+SQL> select thread#,max(sequence#) from v$archived_log group by thread#;
+
+In Standby:
+SQL> select process,status,sequence# from v$managed_standby;
+
+SQL> shut immediate
+SQL> startup mount
+SQL> alter database convert to physical standby;
+SQL> shut immediate
+SQL> startup
+SQL> select status,instance_name,database_role,open_mode from v$database,v$Instance;
+SQL> alter database recover managed standby database disconnect from session;
+SQL> select process,status,sequence# from v$managed_standby;

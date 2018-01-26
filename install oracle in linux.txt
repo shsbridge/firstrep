@@ -1,0 +1,124 @@
+groupadd oinstall
+groupadd dba
+useradd -m -g oinstall -G dba -d /home/oracle -s /bin/bash -c "Oracle software Owner" oracle
+passwd oracle
+
+Change Kernel parameters
+/etc/sysconfig.conf
+[code]
+
+net.ipv4.ip_forward = 0
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.conf.default.accept_source_route = 0
+kernel.sysrq = 0
+kernel.core_uses_pid = 1
+net.ipv4.tcp_syncookies = 1
+kernel.msgmnb = 65536
+kernel.msgmax = 65536
+kernel.shmmax = 2147483648
+kernel.shmall = 2097152
+kernel.shmmni = 4096
+kernel.sem = 250 32000 100 128
+fs.file-max = 6815744
+fs.aio-max-nr = 1048576
+net.ipv4.ip_local_port_range = 9000 65500
+net.core.rmem_default = 1048576
+net.core.rmem_max = 4194304
+net.core.wmem_default = 262144
+net.core.wmem_max = 1048576
+[/code]
+
+/sbin/sysctl -p
+
+add to /etc/pam.d/login
+session required pam_limits.so
+
+change/add to /etc/security/limits.conf
+
+oracle              soft    nproc   2047
+oracle              hard    nproc   16384
+oracle              soft    nofile  1024
+oracle              hard    nofile  65536
+
+
+
+mkdir -p /u01/home/oracle/product/11.2.0/db_1
+chown -R oracle:oinstall /u01
+
+
+in .bash_profile:
+
+export ORACLE_HOME
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ORACLE_HOME/lib
+export PATH=$ORACLE_HOME/bin:$PATH
+
+copy oracle software to /tmp
+unzip it
+
+cd /tmp/database
+./runInstaller
+
+-----------------------------------------------------
+1. yum update -y
+
+2. installed all the required dependencies
+
+yum install -y binutils.x86_64 compat-libcap1.x86_64 gcc.x86_64 gcc-c++.x86_64 glibc.i686 glibc.x86_64 glibc-devel.i686 glibc-devel.x86_64 ksh compat-libstdc++-33 libaio.i686 libaio.x86_64 libaio-devel.i686 libaio-devel.x86_64 libgcc.i686 libgcc.x86_64 libstdc++.i686 libstdc++.x86_64 libstdc++-devel.i686 libstdc++-devel.x86_64 libXi.i686 libXi.x86_64 libXtst.i686 libXtst.x86_64 make.x86_64 sysstat.x86_64 zip unzip
+
+3.
+groupadd oinstall, groupadd dba, useradd -g oinstall -G dba oracle
+passwd oracle
+
+4. Add the following kernel parameters to /etc/sysctl.conf file.
+fs.aio-max-nr = 1048576
+fs.file-max = 6815744
+kernel.shmall = 2097152
+kernel.shmmax = 8329226240
+kernel.shmmni = 4096
+kernel.sem = 250 32000 100 128
+net.ipv4.ip_local_port_range = 9000 65500
+net.core.rmem_default = 262144
+net.core.rmem_max = 4194304
+net.core.wmem_default = 262144
+net.core.wmem_max = 1048586
+
+and apply them:
+# sysctl -p
+# sysct -a
+
+5. Set the limits for oracle in /etc/security/limits.conf file.
+oracle soft nproc 2047
+oracle hard nproc 16384
+oracle soft nofile 1024
+oracle hard nofile 65536
+
+
+/directory_path/runInstaller [-silent] [-noconfig] \
+ -responseFile responsefilename
+
+
+# mount -o loop /dev/sr0  /mnt
+# cp /mnt/media.repo /etc/yum.repos.d/rhel7dvd.repo
+# chmod 644 /etc/yum.repos.d/rhel7dvd.repo
+new repo file, changing the gpgcheck=0 setting to 1 and adding the following 3 lines
+enabled=1
+baseurl=file:///mnt/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+
+In the end:
+[InstallMedia]
+name=DVD for Red Hat Enterprise Linux 7.1 Server
+mediaid=1359576196.686790
+metadata_expire=-1
+gpgcheck=1
+cost=500
+enabled=1
+baseurl=file:///mnt/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+
+# yum clean all
+# subscription-manager clean
+
+# yum  --noplugins list
+# yum  --noplugins update
+

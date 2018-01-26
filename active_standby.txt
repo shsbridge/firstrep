@@ -1,0 +1,49 @@
+in standby:
+
+ALTER SYSTEM SET DB_RECOVERY_FILE_DEST_SIZE=5G;
+ALTER SYSTEM SET DB_RECOVERY_FILE_DEST=’/u01/oracle/flashback';
+
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+CREATE RESTORE POINT Standby_flashback_testing GUARANTEE FLASHBACK DATABASE;
+select NAME, SCN, TIME from v$restore_point;
+select CONTROLFILE_TYPE from v$database;---standby
+
+in primary:
+
+ALTER SYSTEM ARCHIVE LOG CURRENT;
+ALTER SYSTEM SET LOG_ARCHIVE_DEST_STATE_2=DEFER;
+
+in standby:
+
+select database_role from v$database;
+alter database activate standby database;
+select CONTROLFILE_TYPE from v$database;   -- Current
+ALTER DATABASE SET STANDBY DATABASE TO MAXIMIZE PERFORMANCE;
+ALTER DATABASE OPEN;
+
+select open_mode from v$database;
+
+ReverBack:
+
+STARTUP MOUNT FORCE;
+FLASHBACK DATABASE TO RESTORE POINT Standby_flashback_testing;
+
+ select controlfile_type from v$database;   -- backup controlfile.
+
+ALTER DATABASE CONVERT TO PHYSICAL STANDBY;
+STARTUP MOUNT FORCE;
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT;
+
+select controlfile_type from v$database;  --standby
+
+Drop the Restore point:
+DROP RESTORE POINT Standby_flashback_testing ;
+
+in primary
+
+ALTER SYSTEM ARCHIVE LOG CURRENT;
+ALTER SYSTEM SET LOG_ARCHIVE_DEST_STATE_2=ENABLE;
+
+
+select flashback_on from gv$database;
+select PROCESS,CLIENT_PROCESS,THREAD#,SEQUENCE#,BLOCK# from v$managed_standby where process = 'MRP0' or client_process='LGWR';

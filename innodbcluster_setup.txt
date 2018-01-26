@@ -1,0 +1,83 @@
+MyNewPass4!
+
+/usr/sbin/mysqld --initialize --basedir=/usr --datadir=/mysql_data --user=mysql
+
+[mysqld]
+basedir=/usr
+datadir=/mysql_data
+
+chmod 744 /etc/my.cnf
+
+alter user root@'localhost' identified by 'MyNewPass4!';
+
+INSTALL PLUGIN validate_password SONAME 'validate_password.so';
+
+install plugin audit_log soname 'audit_log.so';
+
+install plugin group_replication soname 'group_replication.so';
+
+
+SET SQL_LOG_BIN=0;
+CREATE USER rpl_user@'%' IDENTIFIED BY 'MyNewPass4!';
+GRANT REPLICATION SLAVE ON *.* TO rpl_user@'%';
+FLUSH PRIVILEGES;
+SET SQL_LOG_BIN=1;
+
+CHANGE MASTER TO MASTER_USER='rpl_user', MASTER_PASSWORD='MyNewPass4!'  FOR CHANNEL 'group_replication_recovery';
+
+
+SET GLOBAL group_replication_bootstrap_group=ON;
+START GROUP_REPLICATION;
+SET GLOBAL group_replication_bootstrap_group=OFF;
+
+select * from performance_schema.replication_group_members;
+SELECT VARIABLE_VALUE FROM performance_schema.global_status WHERE VARIABLE_NAME= 'group_replication_primary_member';
+
+create user dbadmin@'%' identified by 'MyNewPass4!';
+GRANT ALL PRIVILEGES ON *.* TO 'dbadmin'@'%' WITH GRANT OPTION;
+GRANT PROXY ON ''@'' TO 'dbadmin'@'%' WITH GRANT OPTION;
+
+
+
+
+mysqlsh --uri dbadmin@uat-r7-paycol-db1:13306
+
+var cluster = dba.createCluster('paycol_cluster', {adoptFromGR: true});
+
+var cluster = dba.rebootClusterFromCompleteOutage();
+
+cluster.dissolve({force: true});
+
+
+mysqlrouter --bootstrap dbadmin@'uat-r7-paycol-db1:13306' --directory /home/dbadmin/myrouter --conf-use-sockets
+
+
+cd /opt/mysql/meb-4.1/bin
+./mysqlbackup --user=dbadmin --password='MyNewPass4!' --host=127.0.0.1 --backup-image=/mysql_backup/my.mbi --backup-dir=/mysql_backup/backup-tmp backup-to-image
+
+/opt/mysql/meb-4.1/bin/mysqlbackup  --defaults-file=/mysql_backup/backup-tmp/backup-my.cnf --datadir=/mysql_data  --backup-image=/mysql_backup/my.mbi --backup-dir=/mysql_backup/restore-tmp copy-back-and-apply-log
+
+/opt/mysql/meb-4.1/bin/mysqlbackup --defaults-file=/mysql_backup/Backup_res/backup-my.cnf --uncompress \
+--datadir=/mysql_data  --backup-image=/mysql_backup/Backup_res/my.mbi --backup-dir=/mysql_backup/restore_tmp copy-back-and-apply-log
+
+
+SET GTID_NEXT='af35aeee-66ac-4b38-9b79-9964c5ebe251:10';
+
+BEGIN;
+COMMIT;
+
+SET GTID_NEXT='AUTOMATIC';
+
+
+ set sql_log_bin=OFF;
+
+ GRANT PROXY ON ''@'' TO dbadmin@'172.29.%' WITH GRANT OPTION;
+
+ set sql_log_bin=ON;
+
+
+lvextend -L +5G /dev/rhel/usr
+xfs_growfs /usr    for xfs
+
+
+resize2fs /dev/vg_tmsuat/lv_usr   for ext4

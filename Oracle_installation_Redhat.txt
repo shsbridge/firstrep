@@ -1,0 +1,200 @@
+wget http://public-yum.oracle.com/public-yum-ol6.repo
+
+groupadd -g 54321 oinstall
+groupadd -g 54322 dba
+
+useradd -u 54321 -g oinstall -G dba -c "Oracle Software Owner" oracle
+
+passwd oracle
+id -a oracle
+uid=54321(oracle) gid=54321(oinstall) groups=54321(oinstall),54322(dba)
+
+mkdir -p /u01/app/oracle/software
+chown -R oracle:oinstall /u01
+chmod -R 775 /u01
+
+yum install oracle-rdbms-server-11gR2-preinstall
+
+127.0.0.1       localhost.localdomain  localhost
+192.168.28.13   linux03.vbox           linux03
+
+unzip /tmp/p13390677_112040_Linux-x86-64_1of7.zip -d /u01/app/oracle/software
+unzip /tmp/p13390677_112040_Linux-x86-64_2of7.zip -d /u01/app/oracle/software
+
+/u01/app/oracle/software/database/runInstaller
+
+Oracle Base: /u01/app/oracle
+Software Location: /u01/app/oracle/product/11.2.0.4
+Inventory Directory: /u01/app/oraInventory
+oraInventory Group Name: oinstall
+
+Database Administrator (OSDBA) Group: dba
+Database Operator (OSOPER) Group (Optional): dba
+
+/u01/app/oraInventory/orainstRoot.sh (first Oracle installations only)
+/u01/app/oracle/product/11.2.0.4/root.sh
+
+vi /home/oracle/.bash_profile
+
+# Oracle variables
+TMP=/tmp; export TMP
+TMPDIR=$TMP; export TMPDIR
+ORACLE_HOSTNAME=linux03.vbox; export ORACLE_HOSTNAME
+ORACLE_BASE=/u01/app/oracle; export ORACLE_BASE
+ORACLE_HOME=$ORACLE_BASE/product/11.2.0.4; export ORACLE_HOME
+#ORACLE_SID=SNAP11G; export ORACLE_SID
+#PATH=/usr/sbin:$PATH; export PATH
+PATH=$ORACLE_HOME/bin:$PATH; export PATH
+LD_LIBRARY_PATH=$ORACLE_HOME/lib:/lib:/usr/lib; export LD_LIBRARY_PATH
+CLASSPATH=$ORACLE_HOME/jlib:$ORACLE_HOME/rdbms/jlib; export CLASSPATH
+
+
+
+Create DB:
+
+mkdir -p /u02/oradata/emrep
+chown -R oracle:oinstall /u02
+chmod -R 775 /u02
+
+export ORACLE_HOME=/u01/app/oracle/product/11.2.0.4
+$ORACLE_HOME/bin/dbca
+
+Global Database Name: emrep
+SID: emrep
+
+Storage Type: File System
+Use Common Location for All Database Files
+Database Files Location: /u02/oradata
+
+Tick Specify Fast Recovery Area
+Fast Recovery Area: {ORACLE_BASE}/fra
+Tick Enable Archiving
+Click on Edit Archive Mode Parameters…
+Archive Log File Format: %t_%s_%r.arc
+
+Create Listener:
+
+export ORACLE_HOME=/u01/app/oracle/product/11.2.0.3
+$ORACLE_HOME/bin/netca
+
+Apply the latest PSU:
+
+export PATH=$PATH:$ORACLE_HOME/OPatch
+unzip -o /tmp/p6880880_112000_Linux-x86-64.zip -d $ORACLE_HOME
+opatch version
+
+mkdir $ORACLE_HOME/Patches
+unzip /tmp/p17478514_112040_Linux-x86-64.zip -d $ORACLE_HOME/Patches
+
+--Check conflict:
+opatch prereq CheckConflictAgainstOHWithDetail -ph ./ -invPtrLoc $ORACLE_HOME/oraInst.loc
+
+--Apply patch
+cd $ORACLE_HOME/Patches/17478514
+opatch apply -invPtrLoc $ORACLE_HOME/oraInst.loc
+
+
+The following or later version of packages for Oracle Linux 7, and Red Hat Enterprise Linux 7 must be installed:
+binutils-2.23.52.0.1-12.el7.x86_64 
+compat-libcap1-1.10-3.el7.x86_64 
+compat-libstdc++-33-3.2.3-71.el7.i686
+compat-libstdc++-33-3.2.3-71.el7.x86_64
+gcc-4.8.2-3.el7.x86_64 
+gcc-c++-4.8.2-3.el7.x86_64 
+glibc-2.17-36.el7.i686 
+glibc-2.17-36.el7.x86_64 
+glibc-devel-2.17-36.el7.i686 
+glibc-devel-2.17-36.el7.x86_64 
+ksh
+libaio-0.3.109-9.el7.i686 
+libaio-0.3.109-9.el7.x86_64 
+libaio-devel-0.3.109-9.el7.i686 
+libaio-devel-0.3.109-9.el7.x86_64 
+libgcc-4.8.2-3.el7.i686 
+libgcc-4.8.2-3.el7.x86_64 
+libstdc++-4.8.2-3.el7.i686 
+libstdc++-4.8.2-3.el7.x86_64 
+libstdc++-devel-4.8.2-3.el7.i686 
+libstdc++-devel-4.8.2-3.el7.x86_64 
+libXi-1.7.2-1.el7.i686 
+libXi-1.7.2-1.el7.x86_64 
+libXtst-1.2.2-1.el7.i686 
+libXtst-1.2.2-1.el7.x86_64 
+make-3.82-19.el7.x86_64 
+sysstat-10.1.5-1.el7.x86_64
+
+# cat /proc/version
+
+--check kernel
+--On Red Hat Enterprise Linux 7:     3.10.0-54.0.1.el7.x86_64 or later
+# uname -r
+
+# more /etc/oraInst.loc
+inventory_loc=/u01/app/oraInventory
+inst_group=oinstall
+
+--Configuring Kernel Parameters and Resource Limits
+
+Parameter	Minimum Value		File
+semmsl		250	                 /proc/sys/kernel/sem
+semmns		32000	
+semopm		100	
+semmni		128	
+
+shmall		2097152			/proc/sys/kernel/shmall
+shmmax		Minimum: 536870912	/proc/sys/kernel/shmmax
+		Maximum: A value that is 1 byte less than the physical memory	
+		Recommended: More than half the physical memory	
+		
+		
+shmmni		4096			/proc/sys/kernel/shmmni
+file-max	6815744			/proc/sys/fs/file-max
+ip_local_port_range	Minimum: 9000	/proc/sys/net/ipv4/ip_local_port_range
+			Maximum: 65500	
+
+rmem_default	262144		/proc/sys/net/core/rmem_default
+rmem_max	4194304		/proc/sys/net/core/rmem_max
+wmem_default	262144		/proc/sys/net/core/wmem_default
+wmem_max	1048576		/proc/sys/net/core/wmem_max
+aio-max-nr	1048576		/proc/sys/fs/aio-max-nr
+		
+	Note: This value limits concurrent outstanding requests and should be set to avoid I/O subsystem failures.	
+
+Parameter				Command
+semmsl, semmns, semopm, and semmni	# /sbin/sysctl -a | grep sem
+		This command displays the value of the semaphore parameters in the order listed.
+shmall, shmmax, and shmmni		# /sbin/sysctl -a | grep shm
+file-max				# /sbin/sysctl -a | grep file-max
+ip_local_port_range			# /sbin/sysctl -a | grep ip_local_port_range
+rmem_default				# /sbin/sysctl -a | grep rmem_default
+rmem_max				# /sbin/sysctl -a | grep rmem_max
+wmem_default				# /sbin/sysctl -a | grep wmem_default
+wmem_max				# /sbin/sysctl -a | grep wmem_max
+
+/etc/sysctl.conf
+fs.aio-max-nr = 1048576
+fs.file-max = 6815744
+kernel.shmall = 2097152
+kernel.shmmax = 536870912
+kernel.shmmni = 4096
+kernel.sem = 250 32000 100 128
+net.ipv4.ip_local_port_range = 9000 65500
+net.core.rmem_default = 262144
+net.core.rmem_max = 4194304
+net.core.wmem_default = 262144
+net.core.wmem_max = 1048576
+
+# /sbin/sysctl -p
+
+$ ulimit -Sn                   nfile  >=1024   >=65536
+4096
+$ ulimit -Hn
+65536
+$ ulimit -Su                   nproc  >=2047  >=16384
+2047
+$ ulimit -Hu
+16384
+$ ulimit -Ss                   stack   >=10240  >=10240 <32768
+10240
+$ ulimit -Hs
+32768

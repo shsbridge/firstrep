@@ -1,0 +1,29 @@
+SELECT 
+    TABLES.table_schema,TABLES.table_name
+FROM TABLES
+LEFT JOIN KEY_COLUMN_USAGE AS c 
+ON (
+       TABLES.TABLE_NAME = c.TABLE_NAME
+   AND c.CONSTRAINT_SCHEMA = TABLES.TABLE_SCHEMA
+   AND c.constraint_name = 'PRIMARY'
+)
+WHERE 
+    TABLES.table_schema <> 'information_schema'
+AND TABLES.table_schema <> 'performance_schema'
+AND TABLES.table_schema <> 'mysql'
+AND TABLES.table_schema <> 'sys'
+AND c.constraint_name IS NULL;
+-------------------------------------------------
+select 
+    table_schema,table_name 
+from  
+    information_schema.columns
+where
+   table_schema <> 'information_schema'
+AND table_schema <> 'performance_schema'
+AND table_schema <> 'mysql'
+AND table_schema <> 'sys'   
+group by 
+    table_schema,table_name   
+having 
+    sum(if(column_key in ('PRI','UNI'), 1,0)) = 0;

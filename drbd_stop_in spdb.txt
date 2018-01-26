@@ -1,0 +1,63 @@
+lsmod
+
+modprobe 
+remove module
+modprobe -r 
+
+drbd-overview
+
+/proc/drbd
+
+
+drbdadm cstate resource
+
+drbdadm disconnect
+
+drbdadm pause-sync
+
+
+/etc/ha.d/ha.cf
+
+/etc/ha.d/authkeys
+
+crm_mon -1 | grep Online
+
+crm configure show
+
+kill crmd 
+
+rm /var/lib/heartbeat/crm/*
+
+ ps -AHfww | grep heartbeat
+
+crm resource stop Apache
+crm configure delete Apache
+
+chkconfig --list
+
+chkconfig name off
+
+
+--------------------
+spdb2
+
+service heartbeat start
+service heartbeat stop
+
+
+
+drbdadm disconnect data
+drbdadm detach
+drbdadm down
+
+chkconfig heartbeat off
+chkconfig drbd off
+
+spdb1
+
+crm resource stop mysql_drbd
+crm configure delete mysql_drbd
+
+add:
+/dev/drbd0    /mysql to /etc/fstab
+
