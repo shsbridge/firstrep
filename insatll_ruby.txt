@@ -16,7 +16,23 @@ bundle
 bundle exec rake db:migrate
 
 rails server
+rails server -b 0.0.0.0
+Rails 4.2.0 application starting in development on http://0.0.0.0:3000
 
+config/boot.rb --add:
+------------------------------------------------
+require 'rubygems'
+require 'rails/commands/server'
+
+module Rails
+  class Server
+    alias :default_options_bk :default_options
+    def default_options
+      default_options_bk.merge!(Host: '0.0.0.0')
+    end
+  end
+end
+----------------------------------------------
 wget http://localhost:3000
 
  instance-1
@@ -26,3 +42,5 @@ https://goo.gl/9OwVBm
 
 AWS::EC2::Instance
 https://goo.gl/4KLUBK
+
+
