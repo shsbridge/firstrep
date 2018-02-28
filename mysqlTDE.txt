@@ -1,0 +1,59 @@
+ --early-plugin-load
+
+InnoDB tables stored in file-per-table tablespaces:
+innodb_file_per_table option 
+
+
+ master encryption key and tablespace keys,
+ decrypted version of a tablespace key never changes,
+master encryption key may be changed-- master key rotation:
+mysql> ALTER INSTANCE ROTATE INNODB MASTER KEY;
+Rotating the master encryption key requires the SUPER privilege.
+
+
+keyring_encrypted_file plugin
+
+keyring_file plugin
+[mysqld]
+early-plugin-load=keyring_file.so
+keyring_file_data=/usr/local/mysql/mysql-keyring/keyring
+SELECT keyring_key_generate('MyKey', 'AES', 32);
+SELECT keyring_key_remove('MyKey');
+
+
+keyring_okv plugin
+[mysqld]
+early-plugin-load=keyring_okv.so
+keyring_okv_conf_dir=/home/user/okv_enrollment
+
+ls okv_enrollment:
+# ls -l okv_enrollment
+total 8
+-rw-rw-r-- 1 rob rob 427 lip 7 18:49 okvclient.ora
+drwxrwxr-x 2 rob rob 4096 lip 7 18:49 ssl
+# ls -l ssl
+10:47 $ ls -l ssl
+total 16
+-rw-rw-r-- 1 rob rob 1200 lip 7 18:49 CA.pem
+-rw-rw-r-- 1 rob rob 1209 lip 7 18:49 cert.pem
+-rw-rw-r-- 1 rob rob 1027 lip 7 18:49 cert_req.pem
+-rw-rw-r-- 1 rob rob 1675 lip 7 18:49 key.pem
+
+ protect encryption keys in key vaults or hardware security modules (HSMs).
+
+
+mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS
+       FROM INFORMATION_SCHEMA.PLUGINS
+       WHERE PLUGIN_NAME LIKE 'keyring%';
+mysql> CREATE TABLE t1 (c1 INT) ENCRYPTION='Y';
+mysql> ALTER TABLE t1 ENCRYPTION='Y';
+mysql> ALTER TABLE t1 ENCRYPTION='N';
+ALTER TABLE ... ENCRYPTION operations rebuild the table using ALGORITHM=COPY.
+
+innodb_file_per_table option
+
+mysql> SELECT TABLE_SCHEMA, TABLE_NAME, CREATE_OPTIONS FROM INFORMATION_SCHEMA.TABLES
+       WHERE CREATE_OPTIONS LIKE '%ENCRYPTION="Y"%';
+
+
+General-Purpose Keyring Key-Management Functions(UDFs)

@@ -1,0 +1,88 @@
+http://amzn.to/1Rro5qL #AWS free tier
+http://bit.ly/1UHnoig  #OpenStack DevStack development Instance
+http://vmw.re/1TUxTjq  #VMware Free vSphere ESXi solo instance
+http://www.vagrantup.com 
+
+https://www.virtualbox.org/wiki/Downloads
+https://www.vagrantup.com/downloads.html
+http://git-scm.com/download
+
+$vagrant box add --provider vitrualbox puppetlabs/centos-7.2.-64-nocm
+
+$git clone https://github.com/jorhett/learning-puppet4
+$cd learning-puppet4
+
+$vagrant plugin install vagrant-vbguest
+
+Vagrantfile
+
+$vagrant up client
+
+VBox.log in ../VirtualBox*/*/Logs/VBox.log
+
+$vagrant status
+$vagrant status client
+$vagrant suspend client
+$vagrant resume client
+$vagrant destroy client
+
+$vagrant ssh client
+
+In VM:
+sudo yum install rsync git
+sudo yum install nano
+sudo yum install vim
+sudo yum install emacs-nox
+
+http://bit.ly/1RTJbP5  #vim-puppet
+
+
+Installing Puppet:
+http://bit.ly/1SYGS2d   #Using Puppet Collections Docs
+http://bit.ly/1Un7JWH   #Enterprise Linux 7 Collection
+
+add package reop in centos
+sudo yum install -y http://yum.puppetlabs.com/puppetlabs-release-pc1-el-7.noarch.rpm
+sudo yum repolist
+
+puppet collection:
+Puppet(puppet server and puppetDB),Facter,MCollective and the Ruby
+
+Install puppet agent:
+sudo yum install -y puppet-agent
+
+Dependencies:
+/opt/puppetlabs/bin/
+facter  #evalute a system, node-specific info
+hiera   #load in hte data, default values
+mco     #Marionette Collective, orchestration framework
+puppet
+/etc/profile.d/puppet-agent.sh
+
+/opt/puppetlabs/bin   #Executables
+/opt/puppetlabs/puppet  #Ruby, gem
+/etc/puppetlabs/puppet   #configuration dir $confdir
+$ssldir  #$confdir/ssl
+/etc/puppetlabs/mcollective #MCollective config dir
+/opt/puppetlabs/puppet/cache  # $vardir
+/var/run/puppetlabs   # $rundir  store PID file
+/etc/puppetlabs/code  #Modules, manifests, Hiera conf file  $codedir
+$environmentpath  #environments
+$basemodulepath   #modules
+$hiera_config     #hiera.yaml config
+
+[vagrant@client ~]$sudo puppet config print |grep dir   #/etc/puppetlabs/puppet
+[vagrant@client ~]$puppet config print |grep dir        #/home/vagrant/.puppetlabs/etc/puppet
+confdir = 
+codedir =
+vardir =
+logdir =
+[vagrant@client ~]$ cat ~/.puppetlabs/etc/puppet/puppet.conf
+#All commands without sudo
+[main]
+logdest = console
+confdir = /etc/puppetlabs/puppet
+codedir = /etc/puppetlabs/code
+
+sudo grep secure_path /etc/sudoers |sed -e 's#$#:/opt/puppetlabs/bin#' |sudo tee /etc/sudoers.d/puppet-securepath
+
